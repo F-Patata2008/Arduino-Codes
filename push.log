@@ -37,3 +37,10 @@ Haciendo push...
 branch 'main' set up to track 'origin/main'.
 [2025-09-24 10:23:17] ✅ Push exitoso
 ========== 2025-09-24 10:23:40 ==========
+Mensaje de commit (dejar vacío para 'Auto-commit'): Haciendo commit...
+[main c566bcc] Patats
+ 2 files changed, 8 insertions(+)
+ create mode 100644 .gitignore
+Haciendo push...
+branch 'main' set up to track 'origin/main'.
+[2025-09-24 10:23:40] ✅ Push exitoso
