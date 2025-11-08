@@ -45,3 +45,87 @@ Haciendo push...
 branch 'main' set up to track 'origin/main'.
 [2025-09-24 10:23:40] ✅ Push exitoso
 ========== 2025-10-14 18:36:01 ==========
+Mensaje de commit (dejar vacío para 'Auto-commit'): Haciendo commit...
+[main d71b175] No se
+ 79 files changed, 7753 insertions(+), 17 deletions(-)
+ create mode 100644 libraries/LiquidCrystal_I2C/LiquidCrystal_I2C.cpp
+ create mode 100644 libraries/LiquidCrystal_I2C/LiquidCrystal_I2C.h
+ create mode 100644 libraries/LiquidCrystal_I2C/LiquidCrystal_I2C.o
+ create mode 100644 libraries/LiquidCrystal_I2C/README.md
+ create mode 100644 libraries/LiquidCrystal_I2C/examples/CustomChars/CustomChars.pde
+ create mode 100644 libraries/LiquidCrystal_I2C/examples/HelloWorld/HelloWorld.pde
+ create mode 100644 libraries/LiquidCrystal_I2C/examples/SerialDisplay/SerialDisplay.pde
+ create mode 100644 libraries/LiquidCrystal_I2C/keywords.txt
+ create mode 100644 libraries/LiquidCrystal_I2C/library.json
+ create mode 100644 libraries/LiquidCrystal_I2C/library.properties
+ create mode 100644 libraries/MH-Z19/LICENSE
+ create mode 100644 libraries/MH-Z19/README.md
+ create mode 100644 libraries/MH-Z19/examples/Analog/Analog.ino
+ create mode 100644 libraries/MH-Z19/examples/BasicUsage/BasicUsage.ino
+ create mode 100644 libraries/MH-Z19/examples/Calibration/Calibration.ino
+ create mode 100644 libraries/MH-Z19/examples/CalibrationPlus/CalibrationPlus.ino
+ create mode 100644 libraries/MH-Z19/examples/ErrorCodes/ErrorCodes.ino
+ create mode 100644 libraries/MH-Z19/examples/FilterUsage/FilterUsage.ino
+ create mode 100644 libraries/MH-Z19/examples/RawCO2/RawCO2.ino
+ create mode 100644 libraries/MH-Z19/examples/Recovery/Recovery.ino
+ create mode 100644 libraries/MH-Z19/examples/RequestCurbing/RequestCurbing.ino
+ create mode 100644 libraries/MH-Z19/examples/RetrieveDeviceInfo/RetrieveDeviceInfo.ino
+ create mode 100644 libraries/MH-Z19/examples/SoftAlarm/SoftAlarm.ino
+ create mode 100644 libraries/MH-Z19/extras/Datasheets/MH-Z19 CO2 Ver1.0.pdf
+ create mode 100644 libraries/MH-Z19/extras/Datasheets/MH-Z19.pdf
+ create mode 100644 libraries/MH-Z19/extras/Datasheets/MH-Z19B Ver1.5.pdf
+ create mode 100644 libraries/MH-Z19/extras/Datasheets/MH-Z19B.pdf
+ create mode 100644 libraries/MH-Z19/extras/Experimental/Experimental.ino
+ create mode 100644 libraries/MH-Z19/extras/MHZ19 SC16IS750/MHZ19.cpp
+ create mode 100644 libraries/MH-Z19/extras/MHZ19 SC16IS750/MHZ19.h
+ create mode 100644 libraries/MH-Z19/extras/MHZ19 SC16IS750/README.md
+ create mode 100644 libraries/MH-Z19/extras/MHZ19 SC16IS750/SC16IS750.cpp
+ create mode 100644 libraries/MH-Z19/extras/MHZ19 SC16IS750/SC16IS750.h
+ create mode 100644 libraries/MH-Z19/extras/MHZ19 SC16IS750/examples/BasicUsage.ino
+ create mode 100644 libraries/MH-Z19/library.properties
+ create mode 100644 libraries/MH-Z19/src/MHZ19.cpp
+ create mode 100644 libraries/MH-Z19/src/MHZ19.h
+ create mode 100644 libraries/MH-Z_CO2_Sensors/LICENSE
+ create mode 100644 libraries/MH-Z_CO2_Sensors/MHZ.cpp
+ create mode 100644 libraries/MH-Z_CO2_Sensors/MHZ.h
+ create mode 100644 libraries/MH-Z_CO2_Sensors/README.md
+ create mode 100644 libraries/MH-Z_CO2_Sensors/examples/MH-Z19B/MH-Z19B.ino
+ create mode 100644 libraries/MH-Z_CO2_Sensors/keywords.txt
+ create mode 100644 libraries/MH-Z_CO2_Sensors/library.properties
+ create mode 100644 libraries/MHZCO2/CHANGELOG.md
+ create mode 100644 libraries/MHZCO2/LICENSE
+ create mode 100644 libraries/MHZCO2/MHZCO2.cpp
+ create mode 100644 libraries/MHZCO2/MHZCO2.h
+ create mode 100644 libraries/MHZCO2/README.md
+ create mode 100644 libraries/MHZCO2/examples/MHZCO2_PWM/MHZCO2_PWM.ino
+ create mode 100644 libraries/MHZCO2/examples/MHZCO2_PWM_highres/MHZCO2_PWM_highres.ino
+ create mode 100644 libraries/MHZCO2/examples/MHZCO2_analog/MHZCO2_analog.ino
+ create mode 100644 libraries/MHZCO2/examples/MHZCO2_serial1/MHZCO2_serial1.ino
+ create mode 100644 libraries/MHZCO2/examples/MHZCO2_serial1_plotter/MHZCO2_serial1_plotter.ino
+ create mode 100644 libraries/MHZCO2/examples/MHZCO2_sw_serial/MHZCO2_sw_serial.ino
+ create mode 100644 libraries/MHZCO2/examples/MHZCO2_sw_serial_timeout/MHZCO2_sw_serial_timeout.ino
+ create mode 100644 libraries/MHZCO2/keywords.txt
+ create mode 100644 libraries/MHZCO2/library.json
+ create mode 100644 libraries/MHZCO2/library.properties
+ create mode 100644 libraries/MHZCO2/test/unit_test_001.cpp
+ create mode 100644 libraries/Mhz19/LICENSE
+ create mode 100755 libraries/Mhz19/README.md
+ create mode 100755 libraries/Mhz19/examples/Basic/Basic.ino
+ create mode 100755 libraries/Mhz19/examples/Basic/platformio.ini
+ create mode 100755 libraries/Mhz19/library.json
+ create mode 100755 libraries/Mhz19/library.properties
+ create mode 100755 libraries/Mhz19/package.json
+ create mode 100755 libraries/Mhz19/platformio.ini
+ create mode 100755 libraries/Mhz19/scripts/coverage.py
+ create mode 100755 libraries/Mhz19/src/Mhz19.cpp
+ create mode 100755 libraries/Mhz19/src/Mhz19.h
+ create mode 100755 libraries/Mhz19/test/native/Mhz19Test.cc
+ create mode 100755 libraries/Mhz19/test/native/fixtures/Mhz19Test.h
+ create mode 100755 libraries/Mhz19/test/native/mocks/Arduino.cc
+ create mode 100755 libraries/Mhz19/test/native/mocks/Arduino.h
+ create mode 100755 libraries/Mhz19/test/native/mocks/Mhz19.h
+ create mode 100755 libraries/Mhz19/test/native/mocks/Stream.h
+Haciendo push...
+branch 'main' set up to track 'origin/main'.
+[2025-10-14 18:36:01] ✅ Push exitoso
+========== 2025-11-07 23:02:28 ==========
