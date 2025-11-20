@@ -7,8 +7,8 @@ void setup() {
 }
 
 void loop() {
-  Serial.println(patata);
   Serial.println("Patata:");
+  Serial.println(patata);
   patata++;
   digitalWrite(z, HIGH);
 
