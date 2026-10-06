@@ -1,2 +1,2 @@
-default_fqbn: arduino:avr:uno
+default_fqbn: esp32:esp32:esp32doit-devkit-v1
 default_port: /dev/ttyUSB0
