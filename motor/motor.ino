@@ -1,252 +1,161 @@
 /*
  * ============================================================================
- * PROYECTO: Control de Motor N20 con Driver HW-095 (L298N)
+ * PROYECTO: Control de Actuadores (Ruedas + Rodillo N20) con Pulsadores
  * CURSO: Desafíos de la Ingeniería y Ciencias
  * ============================================================================
  * 
- * GUÍA DE CONEXIÓN RÁPIDA (¡Modo 2 Cables - No toques los jumpers!):
+ * DESCRIPCIÓN:
+ * Control de 3 motores DC mediante 2 botones con resistencias pull-up internas:
+ * - Botón 1 (Pin 8): Activa el rodillo (Motor N20).
+ * - Botón 2 (Pin 7): Activa las ruedas (2 Motores DC amarillos simultáneos).
+ * - Reposo / Sin pulsar: Todos los motores apagados automáticamente.
+ * 
+ * DIAGRAMA DE PINES:
  * ----------------------------------------------------------------------------
- * 1. Deja el JUMPER NEGRO puesto en ENA (así el motor siempre está habilitado).
- * 2. Ignora por completo IN3, IN4 y ENB (son para un segundo motor que no tienen).
+ * Componente               Pin Arduino    Función
+ * ----------------------------------------------------------------------------
+ * PUENTE H 1 (Ruedas / Motores Amarillos):
+ *   - ruedasIN1            Pin 9          Motor Izquierdo Dirección A
+ *   - ruedasIN2            Pin 11         Motor Izquierdo Dirección B
+ *   - ruedasIN3            Pin 12         Motor Derecho Dirección A
+ *   - ruedasIN4            Pin 13         Motor Derecho Dirección B (*)
  * 
- * CABLES DE CONTROL:
- * HW-095 IN1  ----->  Arduino Pin 9  (PWM)
- * HW-095 IN2  ----->  Arduino Pin 10 (PWM)
+ * PUENTE H 2 (Rodillo / Motor N20):
+ *   - rodilloIN1           Pin 3          Motor Rodillo Dirección A
+ *   - rodilloIN2           Pin 4          Motor Rodillo Dirección B
  * 
- * MOTOR N20:
- * OUT1        ----->  Terminal 1 de Motor N20
- * OUT2        ----->  Terminal 2 de Motor N20
+ * BOTONES (Conexión a GND, usando INPUT_PULLUP):
+ *   - Botón Rodillo        Pin 8          Pulsador Rodillo (LOW = presionado)
+ *   - Botón Ruedas         Pin 7          Pulsador Ruedas  (LOW = presionado)
  * 
- * ALIMENTACIÓN (Modo prueba con cable USB de Arduino):
- * HW-095 +12V ----->  Arduino Pin 5V
- * HW-095 GND  ----->  Arduino GND (¡Masa común!)
+ * (*) NOTA SOBRE PIN 13:
+ * El Pin 13 comparte línea con el LED integrado de la placa. Al reiniciar el
+ * Arduino, puede parpadear levemente. Si notas un pequeño tirón al encender,
+ * puedes mover ruedasIN4 al Pin 5 o Pin 10 (libres).
  * ============================================================================
  */
 
-// --- Pines PWM de Control (Timer1 de Arduino Uno) ---
-const int PIN_IN1 = 9;   // Entrada 1 HW-095 (Control de velocidad y giro)
-const int PIN_IN2 = 10;  // Entrada 2 HW-095 (Control de velocidad y giro)
+// --- PINES PUENTE H 1 (Motores Amarillos / Ruedas) ---
+const int PIN_RUEDAS_IN1 = 9;
+const int PIN_RUEDAS_IN2 = 11;
+const int PIN_RUEDAS_IN3 = 12;
+const int PIN_RUEDAS_IN4 = 13;
 
-// --- Parámetros de Operación ---
-const int VELOCIDAD_MINIMA = 70;  // PWM mínimo para vencer la fricción del reductor
-const int VELOCIDAD_MAXIMA = 255; // Potencia máxima (100% PWM)
+// --- PINES PUENTE H 2 (Motor N20 / Rodillo) ---
+const int PIN_RODILLO_IN1 = 3;
+const int PIN_RODILLO_IN2 = 4;
 
-bool modoAutomatico = true;
-int velocidadActual = 200;
+// --- PINES BOTONES ---
+const int PIN_BOTON_RODILLO = 8; // Pulsador rodillo
+const int PIN_BOTON_RUEDAS  = 7; // Pulsador ruedas
+
+// Variables para telemetría y detección de cambios de estado
+enum EstadoSistema { ESTADO_REPOSO, ESTADO_RODILLO, ESTADO_RUEDAS };
+EstadoSistema estadoAnterior = ESTADO_REPOSO;
 
 void setup() {
-  pinMode(PIN_IN1, OUTPUT);
-  pinMode(PIN_IN2, OUTPUT);
+  // 1. Configurar pines de motores como salidas
+  pinMode(PIN_RUEDAS_IN1, OUTPUT);
+  pinMode(PIN_RUEDAS_IN2, OUTPUT);
+  pinMode(PIN_RUEDAS_IN3, OUTPUT);
+  pinMode(PIN_RUEDAS_IN4, OUTPUT);
 
-  detenerMotor();
+  pinMode(PIN_RODILLO_IN1, OUTPUT);
+  pinMode(PIN_RODILLO_IN2, OUTPUT);
 
+  // 2. Apagar todos los motores al inicio por seguridad
+  detenerTodo();
+
+  // 3. Activar resistencias PULL-UP internas para los botones
+  // (Conexión: Pin digital -> Pulsador -> GND. Sin necesidad de resistencias externas)
+  pinMode(PIN_BOTON_RODILLO, INPUT_PULLUP);
+  pinMode(PIN_BOTON_RUEDAS, INPUT_PULLUP);
+
+  // 4. Telemetría serial para diagnóstico y presentación
   Serial.begin(9600);
-  while (!Serial && millis() < 1000);
-
-  imprimirEncabezado();
+  Serial.println(F("=================================================="));
+  Serial.println(F("  SISTEMA DE CONTROL DE MOTORES Y BOTONES LISTO   "));
+  Serial.println(F("   Pin 8: Rodillo (N20) | Pin 7: Ruedas (mBot)   "));
+  Serial.println(F("=================================================="));
+  Serial.println(F("[ESTADO] Reposo - Todos los motores detenidos."));
 }
 
 void loop() {
-  // 1. Escuchar comandos desde el Monitor Serial
-  if (Serial.available() > 0) {
-    char comando = Serial.read();
-    procesarComandoSerial(comando);
+  // Leer botones (INPUT_PULLUP: LOW = Presionado, HIGH = Suelto)
+  bool rodilloPresionado = (digitalRead(PIN_BOTON_RODILLO) == LOW);
+  bool ruedasPresionado  = (digitalRead(PIN_BOTON_RUEDAS) == LOW);
+
+  // --------------------------------------------------------------------------
+  // LÓGICA DE CONTROL DE ACCIÓN
+  // --------------------------------------------------------------------------
+  if (rodilloPresionado) {
+    activarRodillo();
+    if (estadoAnterior != ESTADO_RODILLO) {
+      Serial.println(F("[ACCION] Boton Rodillo presionado -> Activando Motor N20"));
+      estadoAnterior = ESTADO_RODILLO;
+    }
+  } 
+  else if (ruedasPresionado) {
+    activarRuedas();
+    if (estadoAnterior != ESTADO_RUEDAS) {
+      Serial.println(F("[ACCION] Boton Ruedas presionado -> Activando Motores Amarillos"));
+      estadoAnterior = ESTADO_RUEDAS;
+    }
+  } 
+  else {
+    detenerTodo();
+    if (estadoAnterior != ESTADO_REPOSO) {
+      Serial.println(F("[ACCION] Botones liberados -> Motores en reposo"));
+      estadoAnterior = ESTADO_REPOSO;
+    }
   }
 
-  // 2. Ejecutar rutina automática para demostración
-  if (modoAutomatico) {
-    ejecutarSecuenciaDemo();
-  }
+  // Pequeño retardo de estabilidad (antirrebote / debounce)
+  delay(15);
 }
 
 // ============================================================================
-// FUNCIONES DE CONTROL
+// FUNCIONES AUXILIARES DE CONTROL MODULAR
 // ============================================================================
 
 /**
- * Gira hacia adelante con velocidad controlada por PWM.
+ * Enciende el motor N20 (Rodillo) y asegura que las ruedas estén apagadas.
  */
-void motorAdelante(int velocidad) {
-  velocidad = constrain(velocidad, 0, 255);
-  analogWrite(PIN_IN1, velocidad);
-  digitalWrite(PIN_IN2, LOW);
+void activarRodillo() {
+  // Asegurar ruedas apagadas
+  digitalWrite(PIN_RUEDAS_IN1, LOW);
+  digitalWrite(PIN_RUEDAS_IN2, LOW);
+  digitalWrite(PIN_RUEDAS_IN3, LOW);
+  digitalWrite(PIN_RUEDAS_IN4, LOW);
+
+  // Encender rodillo
+  digitalWrite(PIN_RODILLO_IN1, HIGH);
+  digitalWrite(PIN_RODILLO_IN2, LOW);
 }
 
 /**
- * Gira en reversa con velocidad controlada por PWM.
+ * Enciende las ruedas (Motores amarillos) y asegura que el rodillo esté apagado.
  */
-void motorAtras(int velocidad) {
-  velocidad = constrain(velocidad, 0, 255);
-  digitalWrite(PIN_IN1, LOW);
-  analogWrite(PIN_IN2, velocidad);
+void activarRuedas() {
+  // Asegurar rodillo apagado
+  digitalWrite(PIN_RODILLO_IN1, LOW);
+  digitalWrite(PIN_RODILLO_IN2, LOW);
+
+  // Encender ambas ruedas hacia adelante
+  digitalWrite(PIN_RUEDAS_IN1, HIGH);
+  digitalWrite(PIN_RUEDAS_IN2, LOW);
+  digitalWrite(PIN_RUEDAS_IN3, HIGH);
+  digitalWrite(PIN_RUEDAS_IN4, LOW);
 }
 
 /**
- * Detiene el motor (Freno suave / Corte de señal).
+ * Detiene todos los motores del sistema inmediatamente.
  */
-void detenerMotor() {
-  digitalWrite(PIN_IN1, LOW);
-  digitalWrite(PIN_IN2, LOW);
-}
-
-/**
- * Freno activo (Ambos terminales a HIGH).
- */
-void frenoActivo() {
-  digitalWrite(PIN_IN1, HIGH);
-  digitalWrite(PIN_IN2, HIGH);
-}
-
-// ============================================================================
-// SECUENCIA DE DEMOSTRACIÓN AUTOMÁTICA
-// ============================================================================
-void ejecutarSecuenciaDemo() {
-  Serial.println(F("\n>>> [DEMO] INICIANDO CICLO DE DEMOSTRACION <<<"));
-
-  // 1. Aceleración progresiva adelante
-  Serial.println(F("[1/6] ADELANTE: Rampa de aceleracion progresiva (PWM 70 -> 255)..."));
-  for (int pwm = VELOCIDAD_MINIMA; pwm <= VELOCIDAD_MAXIMA; pwm += 5) {
-    if (verificarInterrupcion()) return;
-    motorAdelante(pwm);
-    delay(35);
-  }
-
-  // 2. Velocidad crucero adelante
-  Serial.println(F("[2/6] Manteniendo velocidad maxima adelante (2 segundos)..."));
-  for (int i = 0; i < 20; i++) {
-    if (verificarInterrupcion()) return;
-    delay(100);
-  }
-
-  // 3. Desaceleración
-  Serial.println(F("[3/6] Desacelerando a reposo..."));
-  for (int pwm = VELOCIDAD_MAXIMA; pwm >= VELOCIDAD_MINIMA; pwm -= 5) {
-    if (verificarInterrupcion()) return;
-    motorAdelante(pwm);
-    delay(25);
-  }
-  detenerMotor();
-  Serial.println(F("[PAUSA] Motor en reposo por 1.5s..."));
-  for (int i = 0; i < 15; i++) {
-    if (verificarInterrupcion()) return;
-    delay(100);
-  }
-
-  // 4. Aceleración en reversa
-  Serial.println(F("[4/6] REVERSA: Rampa de aceleracion progresiva (PWM 70 -> 255)..."));
-  for (int pwm = VELOCIDAD_MINIMA; pwm <= VELOCIDAD_MAXIMA; pwm += 5) {
-    if (verificarInterrupcion()) return;
-    motorAtras(pwm);
-    delay(35);
-  }
-
-  // 5. Velocidad crucero en reversa
-  Serial.println(F("[5/6] Manteniendo velocidad maxima reversa (2 segundos)..."));
-  for (int i = 0; i < 20; i++) {
-    if (verificarInterrupcion()) return;
-    delay(100);
-  }
-
-  // 6. Desaceleración y freno
-  Serial.println(F("[6/6] Desacelerando y aplicando FRENO ACTIVO..."));
-  for (int pwm = VELOCIDAD_MAXIMA; pwm >= VELOCIDAD_MINIMA; pwm -= 5) {
-    if (verificarInterrupcion()) return;
-    motorAtras(pwm);
-    delay(25);
-  }
-  frenoActivo();
-  delay(120);
-  detenerMotor();
-
-  Serial.println(F(">>> [DEMO] CICLO COMPLETADO. Reiniciando en 3s... <<<"));
-  for (int i = 0; i < 30; i++) {
-    if (verificarInterrupcion()) return;
-    delay(100);
-  }
-}
-
-bool verificarInterrupcion() {
-  return (Serial.available() > 0);
-}
-
-// ============================================================================
-// CONSOLA SERIAL INTERACTIVA
-// ============================================================================
-void procesarComandoSerial(char c) {
-  if (c == '\r' || c == '\n') return;
-
-  switch (c) {
-    case 'a': case 'A':
-      modoAutomatico = true;
-      Serial.println(F("\n[MODO] Secuencia Automatica ACTIVADA."));
-      break;
-
-    case 'f': case 'F':
-      modoAutomatico = false;
-      motorAdelante(velocidadActual);
-      Serial.print(F("[MANUAL] Adelante con PWM = "));
-      Serial.println(velocidadActual);
-      break;
-
-    case 'r': case 'R':
-      modoAutomatico = false;
-      motorAtras(velocidadActual);
-      Serial.print(F("[MANUAL] Reversa con PWM = "));
-      Serial.println(velocidadActual);
-      break;
-
-    case 's': case 'S':
-      modoAutomatico = false;
-      detenerMotor();
-      Serial.println(F("[MANUAL] Motor DETENIDO."));
-      break;
-
-    case '+':
-      velocidadActual = constrain(velocidadActual + 25, 0, 255);
-      Serial.print(F("[VELOCIDAD] Incrementada a PWM = "));
-      Serial.println(velocidadActual);
-      break;
-
-    case '-':
-      velocidadActual = constrain(velocidadActual - 25, 0, 255);
-      Serial.print(F("[VELOCIDAD] Reducida a PWM = "));
-      Serial.println(velocidadActual);
-      break;
-
-    case '1': case '2': case '3': case '4': case '5':
-    case '6': case '7': case '8': case '9':
-      velocidadActual = map(c - '0', 1, 9, 80, 255);
-      Serial.print(F("[VELOCIDAD] Nivel "));
-      Serial.print(c);
-      Serial.print(F(" (PWM: "));
-      Serial.print(velocidadActual);
-      Serial.println(F(")"));
-      break;
-
-    case 'h': case 'H':
-      imprimirEncabezado();
-      break;
-
-    default:
-      Serial.print(F("[AVISO] Comando '"));
-      Serial.print(c);
-      Serial.println(F("' no reconocido. Envia 'h' para ayuda."));
-      break;
-  }
-}
-
-void imprimirEncabezado() {
-  Serial.println(F("\n========================================================"));
-  Serial.println(F("     SISTEMA DE CONTROL DE ACTUADOR N20 - HW-095        "));
-  Serial.println(F("       Desafios de la Ingenieria y Ciencias             "));
-  Serial.println(F("========================================================"));
-  Serial.println(F(" COMANDOS SERIALES (9600 BAUD):                         "));
-  Serial.println(F("   [A] - Modo Demo Automatico Continuo                  "));
-  Serial.println(F("   [F] - Giro Adelante (Manual)                         "));
-  Serial.println(F("   [R] - Giro Reversa (Manual)                          "));
-  Serial.println(F("   [S] - Detener Motor                                  "));
-  Serial.println(F("   [+] / [-] - Ajustar Velocidad                        "));
-  Serial.println(F("   [1-9]     - Nivel de Potencia Directa                "));
-  Serial.println(F("   [H] - Mostrar menu de ayuda                          "));
-  Serial.println(F("========================================================\n"));
+void detenerTodo() {
+  digitalWrite(PIN_RODILLO_IN1, LOW);
+  digitalWrite(PIN_RODILLO_IN2, LOW);
+  digitalWrite(PIN_RUEDAS_IN1, LOW);
+  digitalWrite(PIN_RUEDAS_IN2, LOW);
+  digitalWrite(PIN_RUEDAS_IN3, LOW);
+  digitalWrite(PIN_RUEDAS_IN4, LOW);
 }
